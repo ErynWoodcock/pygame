@@ -8,25 +8,28 @@ WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 GAME_NAME = "Slasher//io"
 pygame.display.set_caption(GAME_NAME)
-# colours
+# Colours
 SWORD_COLOUR = (100, 100, 100)
 BACKGROUND_COLOUR = (100, 50, 0)
 MONSTER_COLOUR = (255, 0, 0)
 PLAYER_COLOUR = (0, 255, 0)
-#player setup
+# Player setup
 PLAYER_RADIUS = 20
 PLAYER_SPEED = 1.5
-#sword setup
+# Sword setup
 SWORD_LENGTH = 50
 SWORD_WIDTH = 8
 SWORD_SWING_SPEED = 0.1
-#monster setup
+# Monster setup
 MONSTER_RADIUS = 18
 MONSTER_SPEED = 1.2 
 
 clock = pygame.time.Clock()
 
-# Player code
+'''
+All The player code is contained within this Player class section.
+Within is a folder for drawing the shape, Movement, and the sword.
+'''
 class Player:
 	def __init__(self, x, y):
 		self.x = x
