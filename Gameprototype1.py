@@ -80,7 +80,10 @@ class Player:
 			   self.y + math.sin(self.angle) * (PLAYER_RADIUS + SWORD_LENGTH))
 		return start, end
 
-# Monster code
+'''
+All the Monster code is contained in this class folder.
+Within is folders for spawn event, movement, drawing the monster character, attack, and take damage.
+'''
 class Monster:
 	def __init__(self):
 		edge = random.choice(['top', 'bottom', 'left', 'right'])
@@ -324,6 +327,3 @@ while running:
 	clock.tick(60)
 
 pygame.quit()
-
-
-
