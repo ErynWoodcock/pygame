@@ -197,7 +197,7 @@ pause_font = pygame.font.SysFont(None, 64)
 
 # Save system variables
 player_name = ""
-name_entered = False
+name_error_message = ""
 
 SPAWN_EVENT = pygame.USEREVENT + 1
 '''
@@ -231,6 +231,10 @@ while running:
 				player.last_damage_time = 0
 				score = 0
 				game_over = False
+			# Check leaderboard button
+			leaderboard_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 120, 200, 50)
+			if leaderboard_rect.collidepoint(mouse_x, mouse_y):
+				game_state = 'leaderboard'
 
 		# Pause game
 		if game_state == 'play' and event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -246,18 +250,45 @@ while running:
 				paused = False
 
 		# Handle name entry
-		if game_state == 'enter_name' and event.type == pygame.KEYDOWN:
-			if event.key == pygame.K_RETURN and player_name:
-				# Save the name and score
-				with open("scores.txt", "a") as f:
-					f.write(f"{player_name}: {score}\n")
+		if game_state == 'enter_name':
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_RETURN:
+					if player_name:
+						# Save the name and score
+						with open("scores.txt", "a") as f:
+							f.write(f"{player_name}: {score}\n")
+						game_state = 'menu'
+						game_over = True
+						name_error_message = ""
+					else:
+						name_error_message = "Please enter a name"
+				elif event.key == pygame.K_BACKSPACE:
+					player_name = player_name[:-1]
+				elif event.key == pygame.K_ESCAPE:
+					game_state = 'menu'
+					game_over = False
+				else:
+					if len(player_name) < 5 and event.unicode.isalnum():
+						player_name += event.unicode
+			elif event.type == pygame.MOUSEBUTTONDOWN:
+				mouse_x, mouse_y = pygame.mouse.get_pos()
+				home_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50)
+				if home_button_rect.collidepoint(mouse_x, mouse_y):
+					if player_name:
+						with open("scores.txt", "a") as f:
+							f.write(f"{player_name}: {score}\n")
+						game_state = 'menu'
+						game_over = True
+						name_error_message = ""
+					else:
+						name_error_message = "Please enter a name"
+
+		# Handle leaderboard back button
+		if game_state == 'leaderboard' and event.type == pygame.MOUSEBUTTONDOWN:
+			mouse_x, mouse_y = pygame.mouse.get_pos()
+			back_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 200, 200, 50)
+			if back_rect.collidepoint(mouse_x, mouse_y):
 				game_state = 'menu'
-				game_over = True
-			elif event.key == pygame.K_BACKSPACE:
-				player_name = player_name[:-1]
-			else:
-				if len(player_name) < 5 and event.unicode.isalnum():
-					player_name += event.unicode
 	'''
 	Game is running without being paused 
 	'''
@@ -292,6 +323,7 @@ while running:
 		if player.health <= 0 and game_state != 'enter_name':
 			game_state = 'enter_name'
 			player_name = ""
+			name_error_message = ""
 			name_entered = False
 
 	# Draw
@@ -314,6 +346,15 @@ while running:
 		button_label = 'Retry' if game_over else 'Play'
 		button_text = button_font.render(button_label, True, (0, 0, 0))  # Black text
 		screen.blit(button_text, button_text.get_rect(center=button_rect.center))
+		
+		# Draw leaderboard button
+		leaderboard_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 120, 200, 50)
+		is_hovering_lb = leaderboard_rect.collidepoint(mouse_x, mouse_y)
+		lb_color = (0, 255, 255) if is_hovering_lb else (0, 200, 200)  # Cyan
+		pygame.draw.rect(screen, lb_color, leaderboard_rect)
+		pygame.draw.rect(screen, (255, 255, 255), leaderboard_rect, 2)
+		lb_text = button_font.render('Leaderboard', True, (0, 0, 0))
+		screen.blit(lb_text, lb_text.get_rect(center=leaderboard_rect.center))
 	elif game_state == 'enter_name':
 		# Display name entry screen
 		font = pygame.font.SysFont(None, 48)
@@ -323,6 +364,58 @@ while running:
 		screen.blit(name_text, name_text.get_rect(center=(WIDTH // 2, HEIGHT // 2)))
 		instruction_text = font.render("Press Enter to save", True, (200, 200, 200))
 		screen.blit(instruction_text, instruction_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50)))
+		if name_error_message:
+			error_text = font.render(name_error_message, True, (255, 50, 50))
+			screen.blit(error_text, error_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 90)))
+		# Draw home button on death entry screen
+		home_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 120, 200, 50)
+		mouse_x, mouse_y = pygame.mouse.get_pos()
+		is_hovering_home = home_button_rect.collidepoint(mouse_x, mouse_y)
+		home_color = (200, 0, 0) if is_hovering_home else (150, 0, 0)
+		pygame.draw.rect(screen, home_color, home_button_rect)
+		pygame.draw.rect(screen, (255, 255, 255), home_button_rect, 2)
+		home_text = font.render('Home', True, (255, 255, 255))
+		screen.blit(home_text, home_text.get_rect(center=home_button_rect.center))
+	elif game_state == 'leaderboard':
+		# Load and display leaderboard
+		font = pygame.font.SysFont(None, 48)
+		title = font.render("Leaderboard", True, (255, 255, 255))
+		screen.blit(title, title.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 150)))
+		
+		try:
+			with open("scores.txt", "r") as f:
+				lines = f.readlines()
+			scores = []
+			for line in lines:
+				if ": " in line:
+					parts = line.strip().split(": ")
+					if len(parts) == 2:
+						name, score_str = parts
+						try:
+							scores.append((name, int(score_str)))
+						except ValueError:
+							pass
+			scores.sort(key=lambda x: x[1], reverse=True)
+		except FileNotFoundError:
+			scores = []
+		
+		small_font = pygame.font.SysFont(None, 36)
+		y_offset = HEIGHT // 2 - 100
+		for i, (name, score) in enumerate(scores[:10]):
+			text = f"{i+1}. {name}: {score}"
+			score_text = small_font.render(text, True, (255, 255, 255))
+			screen.blit(score_text, score_text.get_rect(center=(WIDTH // 2, y_offset)))
+			y_offset += 40
+		
+		# Back button
+		back_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 200, 200, 50)
+		mouse_x, mouse_y = pygame.mouse.get_pos()
+		is_hovering_back = back_rect.collidepoint(mouse_x, mouse_y)
+		back_color = (255, 0, 0) if is_hovering_back else (200, 0, 0)
+		pygame.draw.rect(screen, back_color, back_rect)
+		pygame.draw.rect(screen, (255, 255, 255), back_rect, 2)
+		back_text = small_font.render('Back', True, (255, 255, 255))
+		screen.blit(back_text, back_text.get_rect(center=back_rect.center))
 	else:
 		player.draw(screen)
 		for monster in monsters:
