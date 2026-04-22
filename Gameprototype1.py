@@ -6,7 +6,7 @@ pygame.init()
 # Window setup
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-GAME_NAME = "Slasher//io"
+GAME_NAME = "SLASHER//IO"
 pygame.display.set_caption(GAME_NAME)
 # Colours
 SWORD_COLOUR = (100, 100, 100)
@@ -195,9 +195,14 @@ spawn_interval = 1500
 score = 0
 pause_font = pygame.font.SysFont(None, 64)
 
+# Save system variables
+player_name = ""
+name_entered = False
 
 SPAWN_EVENT = pygame.USEREVENT + 1
-
+'''
+While running contains the code for starting the game. Creates a menu and a pause screen as well.
+'''
 running = True
 while running:
 
@@ -240,6 +245,22 @@ while running:
 				game_state = 'menu'
 				paused = False
 
+		# Handle name entry
+		if game_state == 'enter_name' and event.type == pygame.KEYDOWN:
+			if event.key == pygame.K_RETURN and player_name:
+				# Save the name and score
+				with open("scores.txt", "a") as f:
+					f.write(f"{player_name}: {score}\n")
+				game_state = 'menu'
+				game_over = True
+			elif event.key == pygame.K_BACKSPACE:
+				player_name = player_name[:-1]
+			else:
+				if len(player_name) < 5 and event.unicode.isalnum():
+					player_name += event.unicode
+	'''
+	Game is running without being paused 
+	'''
 	if game_state == 'play' and not paused:
 		keys = pygame.key.get_pressed()
 		player.move(keys)
@@ -268,9 +289,10 @@ while running:
 		monsters = [m for m in monsters if m.alive]
 
 		# Check for player death
-		if player.health <= 0:
-			game_state = 'menu'
-			game_over = True
+		if player.health <= 0 and game_state != 'enter_name':
+			game_state = 'enter_name'
+			player_name = ""
+			name_entered = False
 
 	# Draw
 	screen.fill(BACKGROUND_COLOUR)
@@ -292,6 +314,15 @@ while running:
 		button_label = 'Retry' if game_over else 'Play'
 		button_text = button_font.render(button_label, True, (0, 0, 0))  # Black text
 		screen.blit(button_text, button_text.get_rect(center=button_rect.center))
+	elif game_state == 'enter_name':
+		# Display name entry screen
+		font = pygame.font.SysFont(None, 48)
+		prompt_text = font.render("Enter your name (max 5 chars):", True, (255, 255, 255))
+		screen.blit(prompt_text, prompt_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 50)))
+		name_text = font.render(player_name, True, (255, 255, 255))
+		screen.blit(name_text, name_text.get_rect(center=(WIDTH // 2, HEIGHT // 2)))
+		instruction_text = font.render("Press Enter to save", True, (200, 200, 200))
+		screen.blit(instruction_text, instruction_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50)))
 	else:
 		player.draw(screen)
 		for monster in monsters:
