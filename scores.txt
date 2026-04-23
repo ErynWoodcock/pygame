@@ -1,2 +1,6 @@
-Eryn: 31
-Eryn: 10
+ERYN: 31
+ERYN: 10
+JONO: 21
+ERYN: 40
+FOX: 9
+DANL: 17

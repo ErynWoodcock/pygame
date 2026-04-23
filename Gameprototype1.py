@@ -269,10 +269,10 @@ while running:
 					game_over = False
 				else:
 					if len(player_name) < 5 and event.unicode.isalnum():
-						player_name += event.unicode
+						player_name += event.unicode.upper()
 			elif event.type == pygame.MOUSEBUTTONDOWN:
 				mouse_x, mouse_y = pygame.mouse.get_pos()
-				home_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50)
+				home_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 120, 200, 50)
 				if home_button_rect.collidepoint(mouse_x, mouse_y):
 					if player_name:
 						with open("scores.txt", "a") as f:
